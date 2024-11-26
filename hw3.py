@@ -2,7 +2,6 @@
 import numpy as np
 import pandas as pd
 
-#left 2, right 3, match 5
 
 def alignment(input_path, score_path, output_path, aln, gap):
 
@@ -21,7 +20,7 @@ def alignment(input_path, score_path, output_path, aln, gap):
             data.append(row[0])
     index += 1 # totalLine
 
-    
+    # global or local
     if aln == "global":
         globalPoint(name, data, oddmatrix, gap, output_path)
     else:
@@ -32,15 +31,18 @@ def alignment(input_path, score_path, output_path, aln, gap):
     return 0
 
 def globalPoint(names, data, score, gap, output_path):
+    # create point and step matrix
     point = np.zeros((len(data[0])+1, len(data[1])+1))
     step = np.zeros((len(data[0])+1, len(data[1])+1))
+    # init
     for i in range(1, len(data[0])+1):
         point[i][0] = point[i-1][0] + gap
         step[i][0] = 3
-
     for j in range(1, len(data[1])+1):
         point[0][j] = point[0][j-1] + gap
         step[0][j] = 2
+
+    # use dp count score, step tatrix : left 2, right 3, match 5
 
     for i in range(1, len(data[0])+1):
         for j in range(1, len(data[1])+1):
@@ -62,6 +64,7 @@ def globalPoint(names, data, score, gap, output_path):
                     point[i][j] = point[i-1][j-1] + score[np.where(aminoAcid == data[0][i-1])[0][0]][np.where(aminoAcid == data[1][j-1])[0][0]]
                     step[i][j] = 5
     
+    # collect sequence
     seq1 = ""
     seq2 = ""
     while ((i > 0) or (j > 0)):
@@ -82,7 +85,7 @@ def globalPoint(names, data, score, gap, output_path):
     seq1 = seq1[::-1]
     seq2 = seq2[::-1]
     
-
+    # output file
     lines = [names[0], seq1, names[1], seq2]
 
     with open(output_path, "w") as file:
@@ -91,12 +94,14 @@ def globalPoint(names, data, score, gap, output_path):
     return 0
 
 def localPoint(names, data, score, gap, output_path):
+    # create point and step matrix
     point = np.zeros((len(data[0])+1, len(data[1])+1))
     step = np.zeros((len(data[0])+1, len(data[1])+1))
-
     max = 0
     count = 0
     index = []
+
+    # use dp count score, step tatrix : left 2, right 3, match 5, left and right 6, stop 0
 
     for i in range(1, len(data[0])+1):
         for j in range(1, len(data[1])+1):
@@ -176,6 +181,8 @@ def localPoint(names, data, score, gap, output_path):
                     if point[i][j] < 0:
                         point[i][j] = 0
                         step[i][j] = 0
+    
+    # find max score and longest sequences
     ansName = []
     print(index)
     for k in index:
@@ -187,6 +194,7 @@ def localPoint(names, data, score, gap, output_path):
         if len(k[0]) > max:
             max = len(k[0])
 
+    # output file
     for k in ansName:
         if len(k[0]) == max:
             k[0] = k[0][::-1]
@@ -199,6 +207,7 @@ def localPoint(names, data, score, gap, output_path):
     
     return 0
 
+# collect all max score and longest sequences
 def findLongPair(ansName, seq1, seq2, i, j, step, data):
     while ((i > 0) or (j > 0)):
         if step[i][j] == 2:
